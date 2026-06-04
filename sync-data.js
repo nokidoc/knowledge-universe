@@ -1,34 +1,32 @@
-/**
- * Täglich laufen: Hole Daten von Google Sheets → Update index.html
- * Kann als Node.js Script laufen oder als Cloudflare Worker deployed werden
- */
-
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
 const SHEET_ID = '1R8m841BAAqUsmcH6taujbyh_0oj19PlaAGCpvQgCYMM';
-const SHEET_NAME = 'Archiv';
-const API_KEY = process.env.GOOGLE_SHEETS_API_KEY || 'AIzaSyAO7lWlnGCe0eZLiQj_l6osfYPR1gPWYGo';
+const GID = '0';
 
 async function fetchSheetData() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
-  
   try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+    console.log('📥 Fetching CSV...');
     const response = await axios.get(url);
-    const rows = response.data.values || [];
-    
-    if (rows.length < 2) {
-      console.error('❌ Keine Daten im Sheet');
+    const csv = response.data;
+
+    const lines = csv.trim().split('\n');
+    if (lines.length < 2) {
+      console.error('No data');
       return [];
     }
-    
-    const headers = rows[0];
-    const entries = rows.slice(1)
-      .filter(row => row && row.length > 0)
-      .map(row => {
-        const getCol = (name) => row[headers.indexOf(name)] || '';
-        
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const entries = lines.slice(1)
+      .filter(line => line.trim())
+      .map(line => {
+        const cells = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+        const getCol = (name) => {
+          const idx = headers.indexOf(name);
+          return idx >= 0 ? cells[idx] || '' : '';
+        };
         return {
           datum: getCol('Datum'),
           url: getCol('URL'),
@@ -45,45 +43,38 @@ async function fetchSheetData() {
           cluster: getCol('Cluster') || 'Claude'
         };
       });
-    
-    console.log(`✅ ${entries.length} Einträge geladen`);
+
+    console.log('OK: ' + entries.length + ' entries');
     return entries;
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('Error: ' + error.message);
     return [];
   }
 }
 
 async function updateHTML(entries) {
   const htmlPath = path.join(__dirname, 'index.html');
-  
   try {
     let html = fs.readFileSync(htmlPath, 'utf8');
-    const dataScript = `let DATA = ${JSON.stringify({entries})};`;
-    
-    // Ersetze alte DATA
+    const dataScript = 'let DATA = ' + JSON.stringify({entries}) + ';';
     html = html.replace(/let DATA = \{[\s\S]*?\};/, dataScript);
-    
     fs.writeFileSync(htmlPath, html);
-    console.log(`✅ index.html aktualisiert (${entries.length} Einträge)`);
-    
+    console.log('HTML updated');
     return true;
   } catch (error) {
-    console.error('❌ Error updating HTML:', error.message);
+    console.error('Update error: ' + error.message);
     return false;
   }
 }
 
 async function main() {
-  console.log('🔄 Starte Datensync...');
+  console.log('Starting sync...');
   const entries = await fetchSheetData();
-  
   if (entries.length > 0) {
     await updateHTML(entries);
   }
 }
 
-// Nur ausführen wenn direkt aufgerufen
 if (require.main === module) {
   main().catch(console.error);
 }
