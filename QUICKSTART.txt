@@ -1,0 +1,59 @@
+🚀 KNOWLEDGE UNIVERSE - QUICK START
+
+=== 1. SOFORT TESTEN (30 Sekunden) ===
+
+1. Terminal öffnen im Projekt-Verzeichnis
+2. Führe aus: npm install
+3. Führe aus: node sync-data.js
+4. Öffne index.html im Browser
+5. Fertig! Du siehst alle 9700+ Einträge mit Bubble Physics
+
+=== 2. TÄGLICH AUTOMATISCH SYNCHEN ===
+
+Wähle eine Option:
+
+A) CLOUDFLARE WORKER (KOSTENLOS, EMPFOHLEN)
+   - Gehe zu: https://dash.cloudflare.com
+   - Klick: Workers & Pages → Create application
+   - Kopiere Code aus: cloudflare-worker.js
+   - Settings → Environment Variables → GITHUB_TOKEN = dein_token
+   - Triggers → Cron → Pattern: 0 4 * * *
+   - FERTIG! Synct täglich um 4 Uhr morgens
+
+B) LOKAL MIT NODE.JS CRON
+   - npm install node-cron
+   - Erstelle run.js (siehe SETUP.md)
+   - node run.js
+   - Läuft auf deinem Rechner im Hintergrund
+
+=== 3. GITHUB TOKEN ===
+
+Braucht du wenn du Cloudflare Worker verwendest:
+
+1. Gehe zu: https://github.com/settings/tokens
+2. Klick: Generate new token (classic)
+3. Gib ihm einen Namen: "knowledge-universe"
+4. Scope: repo (✓)
+5. Generate
+6. Token kopieren und in Cloudflare eintragen
+
+=== 4. DEINE GOOGLE SHEET ===
+
+Dein "Archiv" Tab braucht diese Spalten:
+- Datum, URL, Plattform, Autor, Titel
+- Transkript, Zusammenfassung, Bild_URL
+- Hashtags, Views, Likes, Relevanz, Cluster
+
+Wenn alles OK ist → node sync-data.js aktualisiert die HTML
+
+=== 5. LIVE SEHEN ===
+
+Dashboard: https://nokidoc.github.io/knowledge-universe
+
+=== FERTIG ===
+
+Dein System syncht täglich automatisch.
+Neue Einträge in der Google Sheet → täglich 4:00 Uhr aktualisiert → Dashboard zeigt sie
+
+Fragen? → Siehe SETUP.md oder README.md
+
